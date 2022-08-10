@@ -17,3 +17,12 @@ pub mod crowdfunding {
         Ok(())
     }
 }
+
+//a macro
+#[derive(Accounts)]
+pub struct Create<'info> {
+    #[account(init, payer=user, space=9000)]
+    pub campaign: Account<'info, Campaign>,
+    pub user: Signer<'info>,
+    pub system_program: Program<'info, System>
+}
