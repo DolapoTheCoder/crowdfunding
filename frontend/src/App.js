@@ -4,6 +4,7 @@ import idl from './idl.json';
 import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import { Program, AnchorProvider, web3, utils, BN } from '@project-serum/anchor';
 import {Buffer} from 'buffer';
+import { publicKey } from '@project-serum/anchor/dist/cjs/utils';
 
 window.Buffer = Buffer;
 
@@ -99,6 +100,26 @@ const App = () => {
 			console.error("Error creating campaign account:", error);
 		}
 	};
+
+  const donate = async () => {
+    try {
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+      
+      //donate
+      await program.rpc.donate(new BN(0.2 * web3.LAMPORTS_PER_SOL), {
+        accounts: {
+          campaign: publicKey,
+          user: provider.wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        },
+      });
+      console.log("Donated some money to:", publicKey.toString());
+    } catch (error) {
+      console.log("Error donating:" , error);
+    }
+  }
+
 
   const renderNotConnectedContainer = () => {
     return <button onClick={connectWallet}>Connect to walllet</button>
