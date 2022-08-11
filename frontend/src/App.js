@@ -1,25 +1,43 @@
-import logo from './logo.svg';
 import './App.css';
+import {useEffect} from "react";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+const App = () => {
+  const checkIfWalletIsConnected = async() => {
+    try {
+      //if phantom connected then this object exists
+      const {solana} = window;
+      if (solana) {
+        //solana exist
+        if(solana.isPhantom) {
+          console.log("Phantm wallet found!");
+          const response = await solana.connect({onlyIfTrusted: true});
+          console.log("Connected with public key", response.publicKey.toString());        }
+      } else {
+        alert("Solana object not found! Get a Phantom Wallet.");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const connectWallet = async () => {
+    
+  };
+
+  const renderNotConnectedContainer = () => {
+    return <button onClick={connectWallet}>Connect to walllet</button>
+  };
+
+
+  useEffect(() => {
+    const onLoad = async() => {
+      await checkIfWalletIsConnected();
+    }
+    window.addEventListener("load", onLoad)
+    return () => window.removeEventListener("load", onLoad);
+  }, []);
+
+  return <div className='App'>{renderNotConnectedContainer()}</div>
+};
 
 export default App;
