@@ -1,8 +1,30 @@
 import './App.css';
 import {useEffect, useState} from "react";
+import idl from './idl.json';
+import { Connection, Publickey, clusterApiUrl } from '@solana/web3.js';
+import { Program, AnchorProvider, web3, utils, BN } from '@project-serum/anchor';
+
+
+const programID = new Publickey(idl.metadata.address);
+
+const network = clusterApiUrl('devnet');
+
+//controls how we aknowledge a trans is done
+const opts = {
+  preflightCommitment: "processed",
+};
+
+
 
 const App = () => {
   const [walletAddress, setWalletAddress] = useState(null);
+  
+  const getProvider = async () => {
+    const connection = new Connection(network, opts.preflightCommitment);
+    const provider = new AnchorProvider(connection, window.solana, opts.preflightCommitment);
+    //authenticated connection via solana
+    return provider;
+  };
 
   const checkIfWalletIsConnected = async() => {
     try {
