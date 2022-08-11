@@ -1,11 +1,13 @@
 import './App.css';
 import {useEffect, useState} from "react";
 import idl from './idl.json';
-import { Connection, Publickey, clusterApiUrl } from '@solana/web3.js';
+import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import { Program, AnchorProvider, web3, utils, BN } from '@project-serum/anchor';
+import {Buffer} from 'buffer';
 
+window.Buffer = Buffer;
 
-const programID = new Publickey(idl.metadata.address);
+const programID = new PublicKey(idl.metadata.address);
 
 const network = clusterApiUrl('devnet');
 
@@ -14,7 +16,7 @@ const opts = {
   preflightCommitment: "processed",
 };
 
-
+const {SystemProgram } = web3;
 
 const App = () => {
   const [walletAddress, setWalletAddress] = useState(null);
@@ -56,10 +58,36 @@ const App = () => {
 
   };
 
+  const createCampaign = async () => {
+    try {
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+      const [campaign] = await PublicKey.findProgramAddress(
+				[
+					utils.bytes.utf8.encode("CAMPAIGN_DEMO"),
+					provider.wallet.publicKey.toBuffer(),
+				],
+				program.programId
+			);
+      await program.rpc.create("Campaign Name", "Campaign Desc", {
+        accounts: {
+          campaign,
+          user: provider.wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        },
+      });
+      console.log("Create a new campaign with account: ", campaign.toString());
+    } catch (error) {
+      console.log("Error creating campaign account:", error);
+    }
+  }
+
   const renderNotConnectedContainer = () => {
     return <button onClick={connectWallet}>Connect to walllet</button>
   };
-
+  const renderConnectedContainer = () => {
+    return <button onClick={createCampaign}>Create a campaign</button>
+  };
 
   useEffect(() => {
     const onLoad = async() => {
@@ -72,6 +100,7 @@ const App = () => {
   return(
     <div className='App'>
       {!walletAddress && renderNotConnectedContainer()}
+      {walletAddress && renderConnectedContainer()}
     </div>)
 };
 
