@@ -20,7 +20,8 @@ const {SystemProgram } = web3;
 
 const App = () => {
   const [walletAddress, setWalletAddress] = useState(null);
-  
+  const [campaigns, setCampaigns] = useState([]);
+
   const getProvider = async () => {
     const connection = new Connection(network, opts.preflightCommitment);
     const provider = new AnchorProvider(connection, window.solana, opts.preflightCommitment);
@@ -58,35 +59,67 @@ const App = () => {
 
   };
 
+  const getCampaigns = async() => {
+    const connection = new Connection(network, opts.preflightCommitment)
+    const provider = getProvider();
+    const program = new Program(idl, programID, provider);
+    Program.all(
+      (await connection.getProgramAccounts(programID)).map(
+        async (campaign) => ({
+          ...(await program.account.campaign.fetch(campaign.pubkey)),
+          pubkey: campaign.pubkey,
+        })
+      ).then(campaign => setCampaigns(campaigns))
+    );
+  }
+
   const createCampaign = async () => {
-    try {
-      const provider = getProvider();
-      const program = new Program(idl, programID, provider);
-      const [campaign] = await PublicKey.findProgramAddress(
+		try {
+			const provider = getProvider();
+			const program = new Program(idl, programID, provider);
+			const [campaign] = await PublicKey.findProgramAddress(
 				[
 					utils.bytes.utf8.encode("CAMPAIGN_DEMO"),
 					provider.wallet.publicKey.toBuffer(),
 				],
 				program.programId
 			);
-      await program.rpc.create("Campaign Name", "Campaign Desc", {
-        accounts: {
-          campaign,
-          user: provider.wallet.publicKey,
-          systemProgram: SystemProgram.programId,
-        },
-      });
-      console.log("Create a new campaign with account: ", campaign.toString());
-    } catch (error) {
-      console.log("Error creating campaign account:", error);
-    }
-  }
+			await program.rpc.create("campaign name", "campaign description", {
+				accounts: {
+					campaign,
+					user: provider.wallet.publicKey,
+					systemProgram: SystemProgram.programId,
+				},
+			});
+			console.log(
+				"Created a new campaign w/ address:",
+				campaign.toString()
+			);
+		} catch (error) {
+			console.error("Error creating campaign account:", error);
+		}
+	};
 
   const renderNotConnectedContainer = () => {
     return <button onClick={connectWallet}>Connect to walllet</button>
   };
   const renderConnectedContainer = () => {
-    return <button onClick={createCampaign}>Create a campaign</button>
+    return(
+      <>
+        <button onClick={createCampaign}>Create a campaign</button>
+        <button onClick={getCampaigns}>Get list of campaigns</button>
+        <br />
+        {campaigns.map(campaign => {
+          <>
+            <p>Campaign ID: {campaign.pubkey.toString()}</p>
+            <p>Balance: {(campaign.amountDonated / web3. LAMPORTS_PER_SOL).toString()}</p>
+            <p>{campaign.name}</p>
+            <p>{campaign.description}</p>
+            <br />
+          </>
+        })}
+      </>
+    );
   };
 
   useEffect(() => {
